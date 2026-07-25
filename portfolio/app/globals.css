@@ -1,26 +1,462 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================================
+   DESIGN TOKENS
+   Everything visual in this portfolio resolves back to a token defined here.
+   Prefer semantic names (canvas, surface, ink) over literal ones (navy, white)
+   so a future theme swap only touches this block.
+   ========================================================================== */
+
+@theme {
+  /* --- Surfaces -------------------------------------------------------- */
+  /* Deep navy, never pure black. Each step is a lift, not a hue shift. */
+  --color-canvas: #07111f;
+  --color-canvas-deep: #050c17;
+  --color-surface: #0f1b2d;
+  --color-surface-raised: #14243a;
+  --color-surface-sunken: #0a1524;
+
+  /* --- Lines ----------------------------------------------------------- */
+  /* Borders should read as a change in light, not as a drawn stroke. */
+  --color-line: rgb(255 255 255 / 0.06);
+  --color-line-strong: rgb(255 255 255 / 0.12);
+
+  /* --- Text ------------------------------------------------------------ */
+  --color-ink: #f5f7fa;
+  --color-ink-muted: #9aa6b2;
+  --color-ink-faint: #6b7a8c;
+
+  /* --- Brand ----------------------------------------------------------- */
+  --color-brand: #4f8cff;
+  --color-brand-soft: #6db8ff;
+  --color-brand-deep: #2f6ae0;
+  --color-mint: #53d7b7;
+  --color-teal: #43c6ac;
+
+  /* --- Illustration-only warmth ---------------------------------------- */
+  /* The single permitted warm family. Never used for UI chrome or text. */
+  --color-sun: #ffd166;
+  --color-coral: #ff8a5b;
+  --color-ember: #e8624a;
+
+  /* --- Typography ------------------------------------------------------ */
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular,
+    monospace;
+
+  /* Editorial display scale — generous, with tight optical tracking. */
+  --text-display: 4.5rem;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 700;
+
+  --text-title: 3rem;
+  --text-title--line-height: 1.08;
+  --text-title--letter-spacing: -0.03em;
+  --text-title--font-weight: 700;
+
+  --text-heading: 2rem;
+  --text-heading--line-height: 1.18;
+  --text-heading--letter-spacing: -0.022em;
+  --text-heading--font-weight: 600;
+
+  --text-subheading: 1.375rem;
+  --text-subheading--line-height: 1.32;
+  --text-subheading--letter-spacing: -0.015em;
+  --text-subheading--font-weight: 600;
+
+  --text-lead: 1.1875rem;
+  --text-lead--line-height: 1.65;
+  --text-lead--letter-spacing: -0.008em;
+
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.14em;
+  --text-eyebrow--font-weight: 600;
+
+  /* --- Radii ----------------------------------------------------------- */
+  --radius-pill: 999px;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+
+  /* --- Elevation ------------------------------------------------------- */
+  /* Shadows are dark-on-dark: they deepen the void rather than cast grey. */
+  --shadow-lift: 0 1px 2px rgb(3 8 16 / 0.4),
+    0 12px 32px -12px rgb(3 8 16 / 0.8);
+  --shadow-lift-lg: 0 2px 4px rgb(3 8 16 / 0.5),
+    0 28px 60px -20px rgb(3 8 16 / 0.9);
+  --shadow-glow: 0 0 0 1px rgb(79 140 255 / 0.28),
+    0 8px 32px -8px rgb(79 140 255 / 0.32);
+  --shadow-glow-mint: 0 0 0 1px rgb(83 215 183 / 0.28),
+    0 8px 32px -8px rgb(83 215 183 / 0.3);
+
+  /* --- Motion ---------------------------------------------------------- */
+  /* One easing family. Nothing bouncy — every curve decelerates into place. */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-gentle: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --animate-drift: drift 22s var(--ease-gentle) infinite;
+  --animate-drift-slow: drift 34s var(--ease-gentle) infinite;
+  --animate-float: float 9s var(--ease-gentle) infinite;
+  --animate-twinkle: twinkle 4s var(--ease-gentle) infinite;
+
+  /* --- Layout ---------------------------------------------------------- */
+  --container-content: 46rem;
+  --container-page: 76rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -3%, 0) scale(1.06);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   BASE
+   ========================================================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Offset anchor jumps so headings clear the sticky navbar. */
+    scroll-padding-top: 6rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* A single, consistent focus treatment across every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-soft);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: rgb(79 140 255 / 0.32);
+    color: var(--color-ink);
+  }
+
+  /* Scrollbar tuned to the canvas so it stops announcing itself. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-surface-raised) transparent;
+  }
+}
+
+/* ============================================================================
+   UTILITIES
+   ========================================================================== */
+
+@utility container-page {
+  width: 100%;
+  max-width: var(--container-page);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@utility container-content {
+  width: 100%;
+  max-width: var(--container-content);
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* Gradient text used sparingly — section eyebrows and one hero line. */
+@utility text-gradient {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-brand-soft),
+    var(--color-mint)
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+/* Fades a full-bleed element into the canvas at both edges. */
+@utility edge-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+}
+
+@utility surface-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}
+
+/* ============================================================================
+   LONG-FORM PROSE
+   Applied to rendered MDX (case studies and articles). Hand-rolled rather
+   than plugin-driven so the measure, rhythm and code blocks match the rest of
+   the design system exactly.
+   ========================================================================== */
+
+.prose {
+  color: var(--color-ink-muted);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.prose > * + * {
+  margin-top: 1.25em;
+}
+
+.prose h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+  color: var(--color-ink);
+  scroll-margin-top: 6rem;
+}
+
+.prose h3 {
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  color: var(--color-ink);
+  scroll-margin-top: 6rem;
+}
+
+.prose h4 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  scroll-margin-top: 6rem;
+}
+
+/* Heading anchors: invisible until the heading is hovered or focused. */
+.prose :is(h2, h3, h4) > a.heading-anchor {
+  margin-left: 0.4em;
+  color: var(--color-ink-faint);
+  opacity: 0;
+  text-decoration: none;
+  transition: opacity 150ms var(--ease-gentle);
+}
+
+.prose :is(h2, h3, h4):hover > a.heading-anchor,
+.prose a.heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.prose strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.prose a:not(.heading-anchor) {
+  color: var(--color-brand-soft);
+  text-decoration: underline;
+  text-decoration-color: rgb(109 184 255 / 0.35);
+  text-underline-offset: 3px;
+  transition: color 150ms var(--ease-gentle),
+    text-decoration-color 150ms var(--ease-gentle);
+}
+
+.prose a:not(.heading-anchor):hover {
+  color: var(--color-mint);
+  text-decoration-color: rgb(83 215 183 / 0.5);
+}
+
+.prose :is(ul, ol) {
+  padding-left: 1.5rem;
+}
+
+.prose ul {
+  list-style: disc;
+}
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li::marker {
+  color: var(--color-ink-faint);
+}
+
+.prose li + li {
+  margin-top: 0.5rem;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--color-brand);
+  padding-left: 1.25rem;
+  font-style: italic;
+  color: var(--color-ink);
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin-block: 3rem;
+}
+
+.prose img {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-line);
+}
+
+.prose figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-ink-faint);
+  text-align: center;
+}
+
+/* --- Tables --- */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.prose :is(th, td) {
+  border-bottom: 1px solid var(--color-line);
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.prose th {
+  color: var(--color-ink);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* --- Inline code --- */
+.prose :not(pre) > code {
+  background-color: rgb(255 255 255 / 0.06);
+  border: 1px solid var(--color-line);
+  border-radius: 0.375rem;
+  padding: 0.125em 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--color-brand-soft);
+}
+
+/* --- Code blocks (rehype-pretty-code / Shiki) --- */
+.prose pre {
+  background-color: var(--color-canvas-deep) !important;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  padding: 1.25rem 0;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.prose pre code {
+  display: grid;
+  font-family: var(--font-mono);
+  background: transparent;
+}
+
+.prose pre code > [data-line] {
+  padding-inline: 1.25rem;
+  border-left: 2px solid transparent;
+}
+
+/* Lines flagged with {1,3-5} in the fence meta. */
+.prose pre code > [data-highlighted-line] {
+  background-color: rgb(79 140 255 / 0.1);
+  border-left-color: var(--color-brand);
+}
+
+.prose [data-rehype-pretty-code-title] {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-bottom: 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: 0.625rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+
+.prose [data-rehype-pretty-code-title] + pre {
+  margin-top: 0;
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+}
+
+/* Shiki emits both themes; we only ship dark, so pin the dark variables. */
+.prose pre code span {
+  color: var(--shiki-dark, inherit);
+}
+
+/* ============================================================================
+   MOTION PREFERENCES
+   Honour the OS setting everywhere, including Framer Motion's inline styles.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
