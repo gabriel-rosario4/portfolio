@@ -1,4 +1,5 @@
 import type { MDXComponents } from "mdx/types";
+import type { ComponentPropsWithoutRef } from "react";
 
 import { Callout } from "@/components/ui/callout";
 import { MetricGrid } from "@/components/ui/metric-card";
@@ -20,6 +21,14 @@ const components: MDXComponents = {
   Figure,
   Gallery,
   ArchitectureDiagram,
+
+  // A markdown table has no width it can shrink to, so it needs its own
+  // scroll container or it forces the whole page sideways on a phone.
+  table: (props: ComponentPropsWithoutRef<"table">) => (
+    <div className="my-8 -mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+      <table {...props} />
+    </div>
+  ),
 };
 
 export function useMDXComponents(): MDXComponents {

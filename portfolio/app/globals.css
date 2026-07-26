@@ -24,7 +24,9 @@
   /* --- Text ------------------------------------------------------------ */
   --color-ink: #f5f7fa;
   --color-ink-muted: #9aa6b2;
-  --color-ink-faint: #6b7a8c;
+  /* Lightened from #6b7a8c: this tone carries 12px meta text (dates, labels,
+     captions), and the darker value fell below WCAG AA on raised surfaces. */
+  --color-ink-faint: #808f9e;
 
   /* --- Brand ----------------------------------------------------------- */
   --color-brand: #4f8cff;
@@ -154,6 +156,10 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     text-rendering: optimizeLegibility;
+    /* Full-bleed art and negative-margin figures must never produce a
+       horizontal scrollbar. `clip` rather than `hidden` so the sticky navbar
+       and table of contents keep working. */
+    overflow-x: clip;
   }
 
   h1,

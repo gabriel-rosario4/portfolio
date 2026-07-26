@@ -52,7 +52,7 @@ export function ProjectGrid({
                 "rounded-pill border px-4 py-2 text-sm font-medium",
                 "transition-[color,background-color,border-color] duration-200 ease-soft",
                 active
-                  ? "border-transparent bg-brand text-white"
+                  ? "border-transparent bg-brand text-canvas"
                   : "border-line-strong bg-surface text-ink-muted hover:border-brand/40 hover:text-ink",
               )}
             >
