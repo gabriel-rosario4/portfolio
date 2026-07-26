@@ -16,7 +16,7 @@ export function Card({
         "surface-card relative overflow-hidden",
         interactive && [
           "transition-[transform,border-color,box-shadow] duration-300",
-          "ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "ease-soft",
           "hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-lift-lg",
         ],
         className,

@@ -1,0 +1,190 @@
+---
+# NOTE: figures below are placeholders pending Gabriel's real numbers.
+title: NBA Player Predictor
+summary: An ML platform that predicts NBA player performance using advanced analytics and real-time data.
+description: An end-to-end machine learning platform that forecasts NBA player box-score outcomes, built around the reality that the hard part was never the model.
+tech: [Python, FastAPI, XGBoost, Postgres, AWS, Docker]
+category: AI/ML
+featured: true
+order: 1
+role: Lead Engineer
+timeline: Jan 2024 – Apr 2024
+github: https://github.com/gabrielrosario/nba-player-predictor
+hasCaseStudy: true
+metrics:
+  - value: 18.7%
+    label: Improvement in prediction accuracy
+    detail: MAE against the season-average baseline, held-out 2024 games
+  - value: 120ms
+    label: Average API response time
+    detail: p50 for a full slate of predictions, warm cache
+  - value: 10K+
+    label: Predictions served
+    detail: During the first month after launch
+---
+
+## The problem
+
+Traditional box-score stats describe what already happened. They are a poor
+basis for predicting what happens next, because they average away exactly the
+things that decide a given night: who else is on the floor, how many days of
+rest a player has had, whether the opposing team switches every screen.
+
+I wanted a system that could answer a narrow, falsifiable question — *how many
+points, rebounds and assists will this player record in tonight's game?* — and
+be scored honestly against reality the next morning.
+
+The interesting engineering problem turned out not to be the model.
+
+## The constraint that shaped everything
+
+Public NBA data sources are unreliable in a specific and annoying way: they are
+usually available, occasionally wrong, and silently inconsistent at the exact
+moments you care about most.
+
+<Callout tone="insight" title="The thing I'd tell someone starting this">
+Every data problem I hit was a *freshness* problem in disguise. A stat line
+that is correct but four hours stale produces a worse prediction than one that
+is approximate but current — because injuries and late scratches move the
+numbers more than any feature I engineered.
+</Callout>
+
+Concretely:
+
+- Injury designations changed up to 30 minutes before tip-off, well after any
+  nightly batch job would have run.
+- Two upstream sources disagreed on minutes played for roughly 2% of games,
+  with no way to tell which was right from the payload alone.
+- Rate limits meant a naive "refresh everything" strategy took longer than the
+  window between the final injury report and the opening tip.
+
+So the architecture had to treat ingestion as a first-class, continuously
+running concern rather than a step that happens before the real work.
+
+## Architecture
+
+<ArchitectureDiagram
+  caption="Ingestion runs continuously; training runs nightly; serving reads only from the feature store."
+  stages={[
+    {
+      label: "Ingestion",
+      detail: "Polls sources on independent schedules, writes raw payloads immutably.",
+      tech: ["Python", "APScheduler"],
+    },
+    {
+      label: "Reconciliation",
+      detail: "Resolves conflicts between sources with a per-field trust order.",
+      tech: ["Postgres"],
+    },
+    {
+      label: "Feature store",
+      detail: "Point-in-time correct features; never leaks post-game information.",
+      tech: ["Postgres"],
+    },
+    {
+      label: "Training",
+      detail: "Nightly retrain, evaluated on a rolling holdout before promotion.",
+      tech: ["XGBoost"],
+    },
+    {
+      label: "Serving",
+      detail: "Reads precomputed features, applies the promoted model.",
+      tech: ["FastAPI", "Docker"],
+    },
+  ]}
+/>
+
+### Why the raw layer is immutable
+
+Every payload lands in a raw table exactly as received, with a fetch timestamp,
+and is never updated. Reconciliation reads from raw and writes to a separate
+resolved layer.
+
+This costs storage and buys two things I would not give up:
+
+1. When a prediction looks wrong, I can reconstruct precisely what the system
+   believed at the moment it predicted. Without this, debugging a bad call is
+   guesswork.
+2. When I fix a reconciliation bug, I can replay history rather than losing it.
+   The first version of my trust ordering was wrong about minutes played; being
+   able to re-derive three months of resolved data from raw turned a
+   catastrophe into an afternoon.
+
+### Why point-in-time correctness got its own layer
+
+The subtlest bug in the project was a leak. An early version of the "player's
+recent form" feature computed a rolling average over a window that included the
+game being predicted. Offline accuracy looked extraordinary. Live accuracy was
+mediocre.
+
+The fix was structural rather than careful: features are written with an
+`as_of` timestamp, and the training query can only select features whose
+`as_of` precedes the game's tip-off.
+
+<Callout tone="warning" title="Leakage doesn't announce itself">
+A model that is suspiciously good offline and ordinary online is almost always
+reading the future. I now treat a large offline/online gap as a leak until
+proven otherwise, rather than as a deployment problem.
+</Callout>
+
+## Modeling decisions
+
+I started with a neural network because the problem *felt* like it deserved
+one. I shipped gradient-boosted trees because they were better on every axis
+that mattered here:
+
+| | XGBoost | Small MLP |
+| --- | --- | --- |
+| Accuracy on tabular features | Better | Slightly worse |
+| Training time | ~4 min | ~40 min |
+| Explaining a single prediction | SHAP, straightforward | Awkward |
+| Behaviour on missing features | Native handling | Requires imputation |
+
+That last row decided it. Missing data is not an edge case in this domain — it
+is Tuesday. A model that handles missingness natively removes an entire class
+of imputation bugs, and imputation on injury data is precisely where a
+plausible-looking wrong answer gets manufactured.
+
+Three features carried most of the signal:
+
+```python
+# Rest and schedule density matter more than any single-game statistic.
+features["days_rest"] = (game_date - prev_game_date).days
+features["games_in_last_7"] = games_within(player_id, game_date, days=7)
+
+# Usage is only meaningful relative to who else is actually available.
+features["usage_share_available"] = (
+    player_usage_rate / team_usage_rate_of_available_players
+)
+```
+
+`usage_share_available` was the single largest accuracy gain in the project,
+and it exists only because the ingestion layer knows who was actually active —
+which is a data engineering property, not a modeling one.
+
+## What I'd change today
+
+**I'd use a real feature store instead of building one in Postgres.** My
+implementation is correct but hand-rolled; point-in-time joins are a solved
+problem and I spent a week re-solving it.
+
+**I'd version features alongside models.** I version the model artifact but not
+the feature definitions that produced it. Reproducing a three-month-old
+prediction currently requires reading git history to know what
+`usage_share_available` meant at the time.
+
+**I'd add prediction intervals rather than point estimates.** A prediction of
+"22 points" is less useful and more confident-sounding than "17–27 points".
+The model was always uncertain; the interface hid it, which is a product
+failure more than a modeling one.
+
+## What I took away
+
+The lesson that generalised past this project: **the model was 20% of the work
+and roughly 5% of the difficulty.** Ingestion reliability, point-in-time
+correctness and honest evaluation consumed the rest, and each of them was the
+thing that actually moved accuracy.
+
+I now start ML projects by building the evaluation harness and the data
+contract first, before training anything. It feels slower for about a week and
+is faster from then on.
