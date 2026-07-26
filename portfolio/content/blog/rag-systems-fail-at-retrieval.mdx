@@ -1,0 +1,104 @@
+---
+title: Your RAG system doesn't have a model problem
+summary: When a retrieval-augmented assistant gives a confident wrong answer, the generation step is almost never where it went wrong.
+date: 2026-03-02
+category: AI Engineering
+tags: [AI Engineering, Search, Architecture]
+featured: false
+draft: false
+---
+
+The first RAG system I built demoed beautifully and disappointed in use. My
+instinct was to reach for a better model. That instinct was wrong, and
+understanding why changed how I build these systems.
+
+## The failure mode that actually matters
+
+There are two ways retrieval can fail:
+
+- **It returns nothing relevant.** The system says "I don't know". Mildly
+  annoying, entirely safe.
+- **It returns something related but wrong.** The model synthesises a fluent,
+  confident, incorrect answer from plausible-looking evidence.
+
+The second is the dangerous one, and pure vector search produces it constantly
+— because embedding similarity is *designed* to always find a nearest
+neighbour. There is no natural "nothing here" in a dense index. Ask about an
+error code that appears in exactly one document and, if the embedding misses
+it, you get the five most conceptually adjacent documents instead of silence.
+
+<Callout tone="warning" title="Confident wrong beats useless">
+A system that says "I don't know" 20% of the time is more useful than one that
+is quietly wrong 5% of the time, because the second one costs the user the time
+it takes to *discover* it was wrong — and it burns the trust that makes them
+come back.
+</Callout>
+
+## Why hybrid retrieval, specifically
+
+Users ask two kinds of question, often in the same breath:
+
+- *"What's our policy on late refunds?"* — conceptual. Embeddings excel.
+- *"What does PGX-4021 mean?"* — literal. Embeddings routinely miss.
+
+Full-text search is the mirror image: excellent at exact tokens, hopeless at
+paraphrase. Running both and merging the candidates covers each one's blind
+spot, and the merge is cheap because you rerank the union anyway.
+
+```python
+# Run retrievers concurrently — they don't depend on each other, and the
+# slowest one sets the latency floor either way.
+dense, lexical, recent = await asyncio.gather(
+    vector_search(query, k=20),
+    fulltext_search(query, k=20),
+    recency_weighted(query, k=10),
+)
+
+candidates = dedupe(dense + lexical + recent)
+ranked = cross_encoder.rank(query, candidates)
+```
+
+## The threshold is the product
+
+The single most important line in my service is a comparison:
+
+```python
+if ranked[0].score < RETRIEVAL_CONFIDENCE_FLOOR:
+    return refusal_with_suggestions(query, ranked[:3])
+```
+
+Set it too high and the assistant is useless. Too low and it's confidently
+wrong. Tuning it consumed a week and mattered more than every prompt change I
+made combined.
+
+The technique that made tuning tractable: **build an evaluation set of
+questions your corpus genuinely cannot answer**, and treat any confident answer
+to one of them as a hard failure. Accuracy metrics on answerable questions
+won't catch this — the system looks great right up until a user asks something
+you don't have.
+
+## Citations change behaviour, not just trust
+
+I expected inline citations to make users trust the system more. They did
+something more useful: they made users *check*.
+
+Roughly 71% of answers had a citation clicked. That means people were treating
+the assistant as a search interface with a summarising front-end rather than as
+an oracle — which is exactly the right mental model, and one the interface
+taught them without a word of documentation.
+
+Two details mattered:
+
+1. Citations attach to the **sentence** they support, not to the answer as a
+   whole. A bibliography at the bottom is decoration; an inline link is a claim.
+2. They stream **with** the text. A user who stops reading halfway has still
+   seen sources for what they read.
+
+## What I'd tell past me
+
+Spend your time on retrieval quality, an honest confidence floor, and
+verifiable citations. The generation step is the most visible part of a RAG
+system and the least likely to be the reason it isn't working.
+
+If the retrieved context is right, most models write a decent answer. If it's
+wrong, the best model in the world writes a beautifully-worded mistake.

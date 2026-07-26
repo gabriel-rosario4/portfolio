@@ -1,0 +1,85 @@
+---
+title: If you can't rebuild it, it's not a cache
+summary: A small rule that removed a whole category of bugs from my data-heavy apps — and the cost I had to accept to get it.
+date: 2026-01-20
+category: Architecture
+tags: [Architecture, Databases, Backend]
+featured: false
+draft: false
+---
+
+Most "the summary disagrees with the detail" bugs come from the same root
+cause: an aggregate that was computed once, stored, and then drifted away from
+the data it was supposed to summarise.
+
+The rule that fixed this for me is short: **anything derived must be
+rebuildable from its source at any time, and nothing derived is ever edited
+directly.**
+
+## Why aggregates drift
+
+Storing a computed value feels harmless. You calculate a portfolio's return,
+write `return_pct = 8.4`, and serve it fast.
+
+Then one of these happens:
+
+- A late-settling transaction arrives and backdates into the period.
+- You fix a bug in the calculation.
+- An import is retried and double-counts a row.
+
+Now the stored aggregate is wrong, and — this is the painful part — **nothing
+tells you.** The number is plausible. It renders fine. It disagrees with the
+transactions behind it, and the only way anyone finds out is if a user adds
+them up by hand.
+
+<Callout tone="insight" title="The test">
+Ask of any stored value: if this disagrees with the source data, which one is
+right? If the answer is anything other than "the source, always, and the stored
+one is simply stale", you have two sources of truth and a future argument.
+</Callout>
+
+## The shape that works
+
+For FinTrack I settled on three layers:
+
+```text
+ledger      → append-only transactions. The only authority.
+snapshots   → daily derived positions. A cache. Disposable.
+queries     → answer ranges by differencing two snapshots.
+```
+
+The important property isn't the speed — it's that `snapshots` can be dropped
+entirely and rebuilt from `ledger` without losing information. That single
+guarantee means:
+
+- A calculation bug is fixed once, in the derivation, then replayed.
+- A disagreement is never ambiguous; the ledger wins by definition.
+- Every displayed number can drill down to the transactions behind it, because
+  the path from source to summary still exists.
+
+## The cost, stated honestly
+
+This design makes writes more expensive. Importing five years of history means
+building every intervening daily snapshot — tens of seconds, not milliseconds.
+
+I chose to make that cost visible rather than hide it: imports run as a
+background job with real progress, and the account is flagged as incomplete
+until it finishes.
+
+That's the tradeoff, and it's worth being clear-eyed about it. Users tolerate a
+slow, honest import. They do not forgive a dashboard that was quietly wrong for
+a week.
+
+## Where I wouldn't apply this
+
+This is not free, and it isn't always right:
+
+- **High write volume, low read complexity.** If you're appending a million
+  events a minute and only ever asking for the last hour, incremental
+  aggregation is the correct answer.
+- **When the source is external and not replayable.** If you can't re-fetch the
+  raw data, your "derived" layer *is* the source, and you should treat it with
+  the care that implies.
+
+The rule is about being deliberate: know which of your tables are authorities
+and which are conveniences, and never let a convenience quietly get promoted.

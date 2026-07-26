@@ -1,0 +1,103 @@
+---
+# NOTE: figures below are placeholders pending Gabriel's real numbers.
+title: ML Model Registry
+summary: Model tracking and evaluation platform for machine learning experiments.
+description: An internal registry that made model promotion a decision with evidence attached, rather than a judgement call someone made on a Friday.
+tech: [Python, MLflow, Docker, Postgres, Kubernetes]
+category: AI/ML
+featured: false
+order: 5
+role: Platform Engineer
+timeline: Jun 2025 – Sep 2025
+github: https://github.com/gabrielrosario/ml-model-registry
+hasCaseStudy: true
+metrics:
+  - value: 100%
+    label: Promotions with a linked evaluation
+    detail: Enforced by the promotion API, not by convention
+  - value: 4x
+    label: Faster rollback
+    detail: Median time from "this is wrong" to serving the previous model
+---
+
+## The problem
+
+The team could train models faster than it could decide whether to ship them.
+Experiments lived in notebooks, metrics lived in Slack messages, and the
+question *"why is this the model in production?"* had no answer beyond
+institutional memory.
+
+The failure this causes isn't shipping a bad model — it's being unable to
+**un**ship one, because nobody is certain what the previous one was or how it
+scored.
+
+## The rule the system enforces
+
+One constraint drove the design: **a model cannot be promoted without a linked
+evaluation run against the current champion, on the same data.**
+
+Not "should not". Cannot — the promotion endpoint rejects it.
+
+<Callout tone="insight" title="Conventions decay, APIs don't">
+We had a written convention requiring a comparison before promotion. It was
+followed reliably for about six weeks. Moving the requirement from a document
+into the API was the entire difference between a rule and a wish.
+</Callout>
+
+<ArchitectureDiagram
+  caption="Promotion is a transaction over an evaluation, not a mutation of a pointer."
+  stages={[
+    {
+      label: "Training run",
+      detail: "Emits an artifact plus the exact data snapshot ID it consumed.",
+      tech: ["MLflow"],
+    },
+    {
+      label: "Evaluation",
+      detail: "Scores challenger and champion on identical held-out data.",
+      tech: ["Python"],
+    },
+    {
+      label: "Promotion gate",
+      detail: "Rejects any promotion lacking a passing, recent comparison.",
+      tech: ["Postgres"],
+    },
+    {
+      label: "Serving",
+      detail: "Resolves the current champion at request time; rollback is a pointer move.",
+      tech: ["Kubernetes", "Docker"],
+    },
+  ]}
+/>
+
+## The tradeoff: friction is the feature
+
+This design deliberately makes shipping a model slower. Every promotion needs a
+comparison run, which takes minutes and occasionally fails for boring
+infrastructure reasons.
+
+Engineers disliked it for roughly a month, and then stopped noticing — because
+the first time a model regressed in production, rolling back took under a
+minute and nobody had to reconstruct anything from memory.
+
+I'd defend the tradeoff, with one caveat: **friction has to be cheap enough to
+be worth it.** When the comparison job was slow and flaky, people looked for
+ways around it. Making it fast and reliable mattered more than making it
+mandatory.
+
+## What I'd change today
+
+**I'd version the data snapshot as a first-class object, not an ID string.**
+Snapshot IDs point at data that can still be mutated upstream, which quietly
+breaks the reproducibility the whole system claims to provide.
+
+**I'd add shadow evaluation.** Comparing on held-out data is not the same as
+comparing on live traffic, and several of our accepted promotions were
+marginal in ways that live data would have exposed immediately.
+
+## What I took away
+
+Platform work is mostly about deciding which mistakes to make impossible. Every
+guardrail costs someone time today to save someone else a bad afternoon later —
+and the ones worth building are the ones where "later" is measured in
+incidents, not in preferences.

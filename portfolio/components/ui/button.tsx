@@ -11,7 +11,7 @@ const button = cva(
     "rounded-pill border",
     // One transition definition for every variant keeps hover states in sync.
     "transition-[transform,box-shadow,background-color,border-color,color]",
-    "duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+    "duration-200 ease-soft",
     "active:translate-y-px",
     "disabled:pointer-events-none disabled:opacity-50",
   ],

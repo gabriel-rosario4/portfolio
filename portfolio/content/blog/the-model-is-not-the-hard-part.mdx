@@ -1,0 +1,108 @@
+---
+title: The model is not the hard part
+summary: After shipping several ML systems, the pattern is consistent — accuracy is bounded by data plumbing long before it's bounded by architecture.
+date: 2026-05-14
+category: Machine Learning
+tags: [Machine Learning, Data Engineering, Architecture]
+featured: true
+draft: false
+---
+
+Every machine learning project I've shipped has followed the same arc. I spend
+the first week excited about the model. I spend the next two months on
+everything else. And the accuracy gains — the real ones, the ones that survive
+contact with production — almost always come from the everything else.
+
+This isn't a complaint. It's the job. But it took me three projects to stop
+being surprised by it.
+
+## The gap between offline and online
+
+Here's the shape of the problem, in the order you usually discover it:
+
+1. You build a model. Offline metrics look good.
+2. You ship it. Online metrics look worse.
+3. You assume the model is overfit and regularise it.
+4. Online metrics stay worse.
+
+Step 3 is the trap. An offline/online gap is *occasionally* overfitting. It is
+far more often a difference between the data the model trained on and the data
+it sees at inference — which is a plumbing problem wearing a modeling costume.
+
+<Callout tone="insight" title="The diagnostic question">
+Before touching hyperparameters, ask: could the training data contain anything
+the model would not have at prediction time? If you can't answer confidently,
+you have a data lineage problem, and no amount of regularisation will fix it.
+</Callout>
+
+## Leakage is the default, not the exception
+
+The most expensive bug I've written was a rolling average.
+
+```python
+# Looks fine. Is not fine.
+df["form_last_5"] = (
+    df.groupby("player_id")["points"]
+      .transform(lambda s: s.rolling(5).mean())
+)
+```
+
+`rolling(5)` on a group that includes the current row means the feature knows
+the target. Offline accuracy was extraordinary. Online accuracy was ordinary.
+It took me two weeks to find, and the fix was one call:
+
+```python
+# Shift first, so the window ends before the row it describes.
+df["form_last_5"] = (
+    df.groupby("player_id")["points"]
+      .transform(lambda s: s.shift(1).rolling(5).mean())
+)
+```
+
+The lesson wasn't "remember to shift". It was that **carefulness is not a
+strategy.** I now make leakage structurally impossible rather than trying to
+avoid it by attention: features carry an `as_of` timestamp, and the training
+query cannot select a feature whose timestamp is later than the event.
+
+Constraints beat vigilance, because vigilance has bad days.
+
+## Freshness beats sophistication
+
+On the NBA prediction platform, I compared two systems:
+
+| | Better model, 4-hour-old data | Simpler model, live data |
+| --- | --- | --- |
+| Offline MAE | Lower | Higher |
+| Live MAE | Higher | **Lower** |
+
+The simpler model won, and it wasn't close. Late injury news moved the target
+more than any feature I engineered. Every hour of staleness cost more accuracy
+than the entire gap between gradient boosting and a neural network.
+
+This generalises further than sports: if your features describe a world that
+changes, the freshness of your pipeline is a modeling decision. It just doesn't
+look like one on the org chart.
+
+## What I do differently now
+
+**I build the evaluation harness first.** Before any training code, I want to
+be able to answer "is this better than what we have?" mechanically. It feels
+slow for a week and pays for itself the first time someone asks whether a
+change helped.
+
+**I keep raw data immutable.** Every payload lands exactly as received and is
+never updated. Reconciliation writes elsewhere. This costs storage and makes
+every "why did it predict that?" question answerable.
+
+**I treat a surprising result as a bug until proven otherwise.** Every genuinely
+shocking number I've produced has, so far, been a leak. Looking for the bug
+first has never wasted my time; assuming brilliance repeatedly has.
+
+## The uncomfortable version
+
+The uncomfortable version of this post is that most of the value in an applied
+ML role comes from work that doesn't look like machine learning. Ingestion
+reliability. Point-in-time correctness. Honest evaluation. Schema discipline.
+
+The model is the part that's fun to talk about. It is rarely the part that
+decides whether the thing works.
