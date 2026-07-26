@@ -28,10 +28,12 @@ const button = cva(
           "bg-surface text-ink border-line-strong",
           "hover:bg-surface-raised hover:border-brand/40 hover:shadow-lift",
         ],
-        /* Blue fill, for in-content calls to action on darker panels. */
+        /* Blue fill, for in-content calls to action on darker panels.
+           Dark ink on blue rather than white — white on #4F8CFF is only 3.2:1.
+           Hover lightens rather than darkens, so contrast improves on hover. */
         brand: [
-          "bg-brand text-white border-transparent",
-          "hover:bg-brand-deep hover:shadow-glow",
+          "bg-brand text-canvas border-transparent",
+          "hover:bg-brand-soft hover:shadow-glow",
         ],
         /* Navigation-weight actions. No chrome until hovered. */
         ghost: [
