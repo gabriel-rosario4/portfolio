@@ -29,8 +29,8 @@ export function ArticleCard({
         className={cn(
           "relative overflow-hidden bg-surface-sunken",
           featured
-            ? "aspect-[16/10] border-b border-line md:aspect-auto md:w-[45%] md:border-b-0 md:border-r"
-            : "aspect-[16/9] border-b border-line",
+            ? "aspect-16/10 border-b border-line md:aspect-auto md:w-[45%] md:border-b-0 md:border-r"
+            : "aspect-16/9 border-b border-line",
         )}
       >
         <PlaceholderArt

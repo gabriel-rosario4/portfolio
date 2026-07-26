@@ -32,7 +32,7 @@ export function ProjectCard({
       className={cn("group flex h-full flex-col", className)}
     >
       {/* --- Thumbnail --- */}
-      <div className="relative aspect-[16/10] overflow-hidden border-b border-line bg-surface-sunken">
+      <div className="relative aspect-16/10 overflow-hidden border-b border-line bg-surface-sunken">
         <PlaceholderArt
           seed={project.slug}
           className="transition-transform duration-500 ease-soft group-hover:scale-[1.04]"

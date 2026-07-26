@@ -87,7 +87,7 @@ export function CaseStudyHero({ project }: { project: Project }) {
 
           <Entrance delay={0.15}>
             <div className="overflow-hidden rounded-panel border border-line shadow-lift-lg">
-              <PlaceholderArt seed={project.slug} className="aspect-[16/10]" />
+              <PlaceholderArt seed={project.slug} className="aspect-16/10" />
             </div>
           </Entrance>
         </div>

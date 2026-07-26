@@ -6,6 +6,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Grid classes capped at the number of items.
+ *
+ * A single card sitting in a three-column grid reads as a page that failed to
+ * load rather than as a short list, so small collections get a narrower track
+ * instead of a full-width row of gaps.
+ */
+export function cardGrid(count: number) {
+  if (count <= 1) return "max-w-md";
+  if (count === 2) return "md:grid-cols-2";
+  return "md:grid-cols-2 lg:grid-cols-3";
+}
+
 /** "2024-01-15" -> "Jan 15, 2024". Fixed to UTC so SSR and client agree. */
 export function formatDate(date: string) {
   return new Date(date).toLocaleDateString("en-US", {

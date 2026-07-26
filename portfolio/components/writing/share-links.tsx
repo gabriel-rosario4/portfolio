@@ -3,7 +3,7 @@
 import { Check, Link2 } from "lucide-react";
 import { useState } from "react";
 
-import { LinkedinIcon, XIcon } from "@/components/ui/brand-icons";
+import { LinkedinIcon } from "@/components/ui/brand-icons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -12,11 +12,9 @@ import { cn } from "@/lib/utils";
  * three times.
  */
 export function ShareLinks({
-  title,
   url,
   className,
 }: {
-  title: string;
   url: string;
   className?: string;
 }) {
@@ -32,12 +30,9 @@ export function ShareLinks({
     }
   };
 
+  // Matches the networks in lib/site — offering a share target for a platform
+  // he isn't on would just advertise an absence.
   const targets = [
-    {
-      label: "Share on X",
-      Icon: XIcon,
-      href: `https://x.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
-    },
     {
       label: "Share on LinkedIn",
       Icon: LinkedinIcon,

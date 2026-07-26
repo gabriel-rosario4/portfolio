@@ -76,7 +76,7 @@ export default async function ArticlePage({ params }: Params) {
           Back to writing
         </Link>
 
-        <Entrance className="mx-auto mt-10 max-w-[46rem]">
+        <Entrance className="mx-auto mt-10 max-w-content">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-faint">
             <span className="font-medium text-brand-soft">
               {article.category}
@@ -112,18 +112,18 @@ export default async function ArticlePage({ params }: Params) {
           delay={0.12}
           className="mx-auto mt-10 max-w-4xl overflow-hidden rounded-panel border border-line"
         >
-          <PlaceholderArt seed={article.slug} className="aspect-[21/9]" />
+          <PlaceholderArt seed={article.slug} className="aspect-21/9" />
         </Entrance>
       </header>
 
       <div className="container-page grid gap-12 py-14 lg:grid-cols-[1fr_15rem] lg:gap-16">
         <div className="min-w-0 justify-self-center lg:justify-self-end">
-          <div className="prose max-w-[46rem]">
+          <div className="prose max-w-content">
             <Body />
           </div>
 
           <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
-            <ShareLinks title={article.title} url={url} />
+            <ShareLinks url={url} />
             <a
               href="/rss.xml"
               className="text-xs text-ink-faint transition-colors hover:text-brand-soft"

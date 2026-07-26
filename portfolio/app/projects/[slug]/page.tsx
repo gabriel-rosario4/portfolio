@@ -71,7 +71,7 @@ export default async function CaseStudyPage({ params }: Params) {
       )}
 
       <div className="container-page grid gap-12 py-16 lg:grid-cols-[1fr_15rem] lg:gap-16">
-        <div className="prose min-w-0 max-w-[46rem]">
+        <div className="prose min-w-0 max-w-content">
           <Body />
         </div>
 

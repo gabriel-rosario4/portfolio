@@ -29,7 +29,7 @@ export const nav = [
   { href: "/about", label: "About" },
 ] as const;
 
-export type SocialId = "github" | "linkedin" | "email" | "x";
+export type SocialId = "linkedin" | "email";
 
 export const socials: {
   id: SocialId;
@@ -37,12 +37,6 @@ export const socials: {
   href: string;
   handle: string;
 }[] = [
-  {
-    id: "github",
-    label: "GitHub",
-    href: "https://github.com/gabrielrosario",
-    handle: "@gabrielrosario",
-  },
   {
     id: "linkedin",
     label: "LinkedIn",
@@ -54,12 +48,6 @@ export const socials: {
     label: "Email",
     href: `mailto:${site.email}`,
     handle: site.email,
-  },
-  {
-    id: "x",
-    label: "X",
-    href: "https://x.com/gabrielrosario",
-    handle: "@gabrielrosario",
   },
 ];
 

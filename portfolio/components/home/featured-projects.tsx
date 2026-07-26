@@ -4,6 +4,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { ProjectCard } from "@/components/projects/project-card";
 import { SectionTitle } from "@/components/ui/section-title";
 import { getFeaturedProjects } from "@/lib/content";
+import { cardGrid, cn } from "@/lib/utils";
 
 export function FeaturedProjects() {
   const projects = getFeaturedProjects(3);
@@ -19,7 +20,7 @@ export function FeaturedProjects() {
         />
       </Reveal>
 
-      <Stagger className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Stagger className={cn("mt-12 grid gap-6", cardGrid(projects.length))}>
         {projects.map((project) => (
           <StaggerItem key={project.slug}>
             <ProjectCard project={project} />
