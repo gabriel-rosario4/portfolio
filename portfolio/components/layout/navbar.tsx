@@ -27,8 +27,14 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close the mobile sheet on navigation.
-  useEffect(() => setOpen(false), [pathname]);
+  // Close the mobile sheet whenever the route changes — including on browser
+  // back/forward. Adjusting state during render (rather than in an effect)
+  // avoids a frame where the sheet is still open over the new page.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setOpen(false);
+  }
 
   // Lock the page behind the open sheet.
   useEffect(() => {

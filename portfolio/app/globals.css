@@ -436,9 +436,10 @@
   border-radius: 0 0 var(--radius-card) var(--radius-card);
 }
 
-/* Shiki emits both themes; we only ship dark, so pin the dark variables. */
-.prose pre code span {
-  color: var(--shiki-dark, inherit);
+/* Shiki writes token colours as inline styles, so nothing else is needed
+   here — but the block still needs to scroll on narrow screens. */
+.prose pre:focus-visible {
+  outline-offset: -2px;
 }
 
 /* ============================================================================
