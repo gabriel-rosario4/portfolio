@@ -1,0 +1,14 @@
+# Normalise line endings for text, and keep binaries byte-exact.
+# Without the binary rules below, git's CRLF conversion corrupts PDFs and
+# images on checkout under Windows.
+* text=auto eol=lf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
