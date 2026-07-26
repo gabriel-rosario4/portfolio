@@ -24,12 +24,7 @@ export function Hero() {
       <div className="container-page relative grid items-center gap-12 pt-12 pb-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-20 lg:pb-32">
         <div className="max-w-xl">
           <Entrance>
-            <p className="flex items-center gap-2 font-display text-lg text-mint">
-              Hey there, I&apos;m
-              <span aria-hidden className="inline-block animate-float">
-                👋
-              </span>
-            </p>
+            <p className="font-display text-lg text-mint">Hey there, I&apos;m</p>
           </Entrance>
 
           <Entrance delay={0.08}>

@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { ArticleCard } from "@/components/writing/article-card";
 import type { Article } from "@/lib/content";
 import { transitions } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import { cardGrid, cn } from "@/lib/utils";
 
 /**
  * Search and tag filtering over the article list.
@@ -113,7 +113,7 @@ export function ArticleBrowser({
 
       <motion.ul
         layout={!reduced}
-        className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        className={cn("mt-8 grid gap-6", cardGrid(articles.length))}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           {visible.map((article) => (

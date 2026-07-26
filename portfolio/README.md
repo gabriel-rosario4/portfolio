@@ -17,7 +17,7 @@ These are placeholders, and they read as real claims. Replace them.
 | --- | --- | --- |
 | Project metrics | `content/case-studies/*.mdx` frontmatter | Every file carries a `NOTE:` comment. Figures like `18.7%` and `120ms` are invented. |
 | Résumé | `public/resume.pdf` | Currently a 636-byte stub that says "PLACEHOLDER". |
-| Social URLs | `lib/site.ts` → `socials` | Guessed handles. |
+| Social URLs | `lib/site.ts` → `socials` | Guessed handle. |
 | Site URL | `lib/site.ts` → `site.url`, or `NEXT_PUBLIC_SITE_URL` | Used for canonicals, sitemap, RSS and OG. |
 | Portrait | `public/portraits/gabriel.jpg` | See below. |
 
@@ -92,6 +92,8 @@ Available inside any MDX file without importing: `Callout`, `MetricGrid`,
 
 ## Known gaps
 
+- Only one case study and one article ship as templates; add more by dropping
+  a new `.mdx` file into the matching `content/` folder.
 - Project thumbnails and article covers use `PlaceholderArt` — seeded abstract
   compositions, meant to be replaced with bespoke illustrations.
 - Per-page OG images aren't implemented; every route falls back to the site

@@ -1,19 +1,13 @@
 import { Mail } from "lucide-react";
 import type { ComponentType } from "react";
 
-import {
-  GithubIcon,
-  LinkedinIcon,
-  XIcon,
-} from "@/components/ui/brand-icons";
+import { LinkedinIcon } from "@/components/ui/brand-icons";
 import { socials, type SocialId } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<SocialId, ComponentType<{ className?: string }>> = {
-  github: GithubIcon,
   linkedin: LinkedinIcon,
   email: Mail,
-  x: XIcon,
 };
 
 export function SocialLinks({

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ProjectCard } from "@/components/projects/project-card";
 import type { Project, ProjectCategory } from "@/lib/content";
 import { transitions } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import { cardGrid, cn } from "@/lib/utils";
 
 type Filter = "All" | ProjectCategory;
 
@@ -70,7 +70,9 @@ export function ProjectGrid({
 
       <motion.ul
         layout={!reduced}
-        className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        // Sized from the full set, not the filtered one, so the track doesn't
+        // resize every time a filter is toggled.
+        className={cn("mt-10 grid gap-6", cardGrid(projects.length))}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           {visible.map((project) => (
